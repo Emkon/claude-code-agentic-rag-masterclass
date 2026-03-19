@@ -50,7 +50,3 @@ A hands-on course where you collaborate with Claude Code to build a full-feature
 - [PRD.md](./PRD.md) — What to build (the 8 modules in detail)
 - [CLAUDE.md](./CLAUDE.md) — Context for Claude Code
 - [PROGRESS.md](./PROGRESS.md) — Track your build progress
-
-## Join the Community
-
-If you want to connect with hundreds of builders creating production-grade AI and RAG systems, join us in [The AI Automators community](https://www.theaiautomators.com/). Share your progress, get help when you're stuck, and see what others are building.
