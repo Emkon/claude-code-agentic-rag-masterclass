@@ -15,9 +15,12 @@
 
 ### Module 2: BYO Retrieval + Memory ✅
 - [x] Database — documents + chunks tables, RLS, HNSW index, match_chunks RPC, Realtime enabled, Storage bucket
-- [x] Backend — embedding_service, ingestion_service, retrieval_service, documents router, chat_service updated
-- [x] Frontend — DocumentsPage, useDocuments hook, Realtime status updates, sources indicator, Chat/Documents nav
-- [x] End-to-End Validation — upload PDF → status live update → chat retrieves from document
+- [x] Backend — embedding_service (local sentence-transformers), ingestion_service, retrieval_service, documents router, chat_service updated
+- [x] Frontend — DocumentsPage with drag-and-drop, useDocuments hook, Realtime status updates, sources indicator
+- [x] UI — white sidebar with Chat/Documents nav + user profile, stop generation button (AbortController)
+- [x] End-to-End Validation — upload PDF → status live update → chat retrieves from document → stop mid-stream works
+
+**Repository:** https://github.com/Emkon/claude-code-agentic-rag-masterclass
 
 **Running on:**
 - Backend: `http://localhost:8001`

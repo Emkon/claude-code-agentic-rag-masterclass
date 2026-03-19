@@ -146,6 +146,12 @@ This gives total control, zero cost, and full understanding of every layer.
 - Vite proxy must target `http://127.0.0.1:8001` (not `localhost`) on Windows — IPv6 resolution issue
 - Upload button lives in the chat input (paperclip icon), not a separate Documents page
 
+**UI Redesign (v1.0):**
+- Clean white sidebar with Chat/Documents nav items and user profile at bottom (initials avatar + email + sign out)
+- Documents page redesigned with drag-and-drop upload zone + document list (filename, status badge, size, chunks, delete)
+- Upload moved from chat input to Documents page only
+- Stop generation button (filled square icon) replaces Send while LLM is streaming — uses `AbortController` to cancel fetch mid-stream, partial response cleared cleanly
+
 ---
 
 ## Module 3: Record Manager 🔄 NEXT
