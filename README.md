@@ -2,10 +2,6 @@
 
 Build an agentic RAG application from scratch by collaborating with Claude Code. Follow along with our video series using the docs in this repo.
 
-[![Claude Code RAG Masterclass](./video-thumbnail.png)](https://www.youtube.com/watch?v=xgPWCuqLoek)
-
-[Watch the full video on YouTube](https://www.youtube.com/watch?v=xgPWCuqLoek)
-
 ## What This Is
 
 A hands-on course where you collaborate with Claude Code to build a full-featured RAG system. You're not the one writing code—Claude is. Your job is to guide it, understand what you're building, and course-correct when needed.
