@@ -4,9 +4,9 @@
 
 A RAG application with two interfaces:
 1. **Chat** (default view) - Threaded conversations with retrieval-augmented responses
-2. **Ingestion** - Upload files manually, track processing, manage documents
+2. **Documents** - Upload PDFs manually, track processing status, manage documents
 
-This is **not** an automated pipeline with connectors. Files are uploaded manually via drag-and-drop. Configuration is via environment variables, no admin UI.
+This is **not** an automated pipeline with connectors. Files are uploaded manually. Configuration is via environment variables, no admin UI.
 
 ## Target Users
 
@@ -53,89 +53,145 @@ Technically-minded people who want to build production RAG systems using AI codi
 | Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui |
 | Backend | Python + FastAPI |
 | Database | Supabase (Postgres + pgvector + Auth + Storage + Realtime) |
-| LLM | Groq API (e.g., Llama-3.3-70B) via OpenAI-compatible SDK |
-| Embeddings | Local models (e.g., sentence-transformers) to keep it 100% free |
+| LLM | Groq API (`llama-3.1-8b-instant`) via OpenAI-compatible SDK |
+| Embeddings | Hugging Face Inference API (`sentence-transformers/all-MiniLM-L6-v2`, 384 dims, free tier) |
 | Observability | LangSmith |
+
+## Runtime
+
+- Backend: `http://localhost:8001` — `cd backend && venv/Scripts/uvicorn app.main:app --reload --port 8001`
+- Frontend: `http://localhost:5174` — `cd frontend && npm run dev`
 
 ## Constraints
 
-- No LLM frameworks - raw OpenAI Python SDK pointed to Groq's Base URL using the standard Chat Completions API. Pydantic for structured outputs.
-- Row-Level Security on all tables - users only see their own data
+- No LLM frameworks — raw OpenAI Python SDK pointed at Groq base URL. Pydantic for structured outputs.
+- Row-Level Security on all tables — users only see their own data
 - Streaming chat via SSE
-- Ingestion status via Supabase Realtime
-
----
-
-## Module 1: The App Shell + Observability
-
-**Build:** Auth, chat UI, Groq Chat Completions API integration (managing threads manually), LangSmith tracing
-
-**Learn:** Setting up the foundation for custom RAG, standardizing API calls, and avoiding vendor lock-in from day one.
-
-**Note:** By starting directly with Groq, we bypass the "black box" managed RAG phase entirely. This gives us total control over our memory and retrieval pipeline right out of the gate, while benefiting from Groq's blazing inference speed.
+- Ingestion status via Supabase Realtime (postgres_changes on `documents` table)
+- No LangChain, no LlamaIndex
 
 ---
 
 ## Architectural Decision: Bypassing Managed RAG
 
-The original tutorial included a transition phase from OpenAI's managed Responses API (which handled memory and file search invisibly) to a custom Chat Completions setup. Since we are optimizing for speed and zero cost with Groq, we are skipping the managed "training wheels" entirely.
+The original course used OpenAI's managed Vector Store (platform.openai.com/storage/vector-stores) — a black box where you upload a file and OpenAI handles embedding, storage, and retrieval invisibly via `file_search`.
 
-**The decision:** We implement the standard OpenAI-compatible Chat Completions API from Module 1, configuring the client to hit the Groq API. 
+**We skipped this entirely.** We built the equivalent from scratch:
 
-**This is a lesson in steering Claude Code**: you need to clearly communicate to the AI that we are *not* using OpenAI's proprietary endpoints or managed file search. You must explicitly guide the AI to use Groq, set the correct environment variables (`GROQ_API_KEY`), and handle message history manually in the database from the very beginning.
+| OpenAI Managed | Our Implementation |
+|---|---|
+| Vector Store UI | Supabase `chunks` table + pgvector |
+| OpenAI file upload | `/documents` endpoint + Supabase Storage |
+| OpenAI embeddings (hidden) | HuggingFace `all-MiniLM-L6-v2` |
+| `file_search` tool | `match_chunks` RPC + `retrieval_service.py` |
+
+This gives total control, zero cost, and full understanding of every layer.
 
 ---
 
-## Module 2: BYO Retrieval + Memory
+## Module 1: App Shell + Observability ✅ COMPLETE
 
-**Build:** Ingestion UI, file storage, local chunking → local embedding → pgvector, retrieval tool, Groq Chat Completions integration, chat history storage (stateless API - you manage memory now), realtime ingestion status
+**Built:**
+- Supabase Auth (email/password) with RLS on all tables
+- Threaded chat — create, rename (pencil icon on hover), delete (trash icon on hover), persistent history
+- Groq Chat Completions (`llama-3.1-8b-instant`) with SSE streaming
+- Stateless API — full chat history fetched from DB and sent on every request
+- LangSmith tracing
+- Dynamic system prompt with today's date injected
+- Dark sidebar UI with Chat/Documents nav toggle
+- ChatGPT-style message bubbles (dark bubble right for user, light bubble + avatar left for assistant)
+- Icon send button (dark circle, grays out when empty)
+- Separate Sign In / Sign Up / Confirm Email pages with password match validation
+- Auto-title threads from first 5 words of first message
 
-**Learn:** Chunking, embeddings, vector search, tool calling, relevance thresholds, managing conversation history, **steering AI agents to build custom pipelines.**
+**Key decisions:**
+- `llama-3.3-70b-versatile` → `llama-3.1-8b-instant` for speed
+- OpenAI embeddings → Hugging Face free API
+- Vite proxy: `/api` → `http://localhost:8001`
+- Port 8000 blocked on Windows → using 8001
+- Frontend landed on port 5174 (5173 was in use)
+- `python-multipart` required for file uploads (added to requirements.txt)
 
 ---
 
-## Module 3: Record Manager
+## Module 2: BYO Retrieval + Memory ✅ COMPLETE
 
-**Build:** Content hashing, detect changes, only process what's new/modified
+**Built:**
+- `documents` table (id, user_id, filename, storage_path, size_bytes, status, error_msg, chunk_count) + RLS
+- `chunks` table (id, document_id, user_id, content, embedding vector(384), chunk_index) + RLS + HNSW index
+- `match_chunks` Supabase RPC function for cosine similarity search (threshold 0.3, top-K 5)
+- Supabase Storage bucket `documents` (private, 50MB limit, PDF only) + RLS policies
+- Supabase Realtime enabled on `documents` table via `alter publication supabase_realtime add table documents`
+- `embedding_service.py` — HuggingFace API, 500-char chunks / 50-char overlap, batch size 32, 60s timeout, `wait_for_model: True`
+- `ingestion_service.py` — parse (pypdf) → chunk → embed → store in batches of 100 → broadcast status via DB writes
+- `retrieval_service.py` — embed query → `match_chunks` RPC → `build_context_block()`
+- `chat_service.py` — retrieves context before every chat turn, injects into system prompt, yields `__sources:N` SSE event
+- `routers/documents.py` — POST (upload + background ingest task), GET (list), DELETE (cascade)
+- Frontend Documents page — upload button, live status labels with animation, chunk count + file size on complete, delete button
+- Frontend `useDocuments` hook — Realtime subscription updates document status in-place without re-fetch
+- Sources indicator in ChatWindow — "Searching N document chunks..." while streaming
+- Chat/Documents nav toggle in sidebar
 
-**Learn:** Why naive ingestion duplicates, incremental updates
+**New packages added:**
+- `pypdf==4.3.1`
+- `python-multipart>=0.0.9`
+- `sentence-transformers==3.3.1` (replaces HuggingFace Inference API — deprecated 410)
+
+**Key decisions:**
+- Realtime via `postgres_changes` (not Broadcast) — backend just writes to DB, frontend listens
+- `asyncio.create_task()` for background ingestion — no Celery needed
+- FormData upload: do NOT set Content-Type manually — browser must set boundary
+- Storage path: `{user_id}/{sanitized_filename}` — sanitize brackets/spaces with regex
+- Embeddings run locally via `sentence-transformers` — HF `/pipeline/feature-extraction/` and `/models/` endpoints both return 410
+- Vite proxy must target `http://127.0.0.1:8001` (not `localhost`) on Windows — IPv6 resolution issue
+- Upload button lives in the chat input (paperclip icon), not a separate Documents page
+
+---
+
+## Module 3: Record Manager 🔄 NEXT
+
+**Goal:** Prevent duplicate chunks when the same file is uploaded more than once. Only re-ingest if the file content has actually changed.
+
+**The problem with naive ingestion:**
+Every upload blindly inserts new chunks into the `chunks` table. Upload the same PDF twice → double the chunks → retrieval returns duplicates → degraded quality.
+
+**Build:**
+- Add `content_hash` (SHA-256) column to `documents` table
+- On upload: hash the file bytes before storing
+- Look up existing document by `(user_id, filename)`:
+  - **Same hash** → return existing document, skip ingestion entirely
+  - **Different hash** → delete old chunks, update record, re-ingest
+  - **No match** → normal first-time ingestion
+- Surface status in UI: "Already up to date" vs "Re-processing..."
+
+**Learn:** Why naive ingestion duplicates, incremental updates, content-addressable storage
 
 ---
 
 ## Module 4: Metadata Extraction
-
 **Build:** LLM (Groq) extracts structured metadata, filter retrieval by metadata
-
 **Learn:** Structured extraction, schema design, metadata-enhanced retrieval
 
 ---
 
 ## Module 5: Multi-Format Support
-
 **Build:** PDF/DOCX/HTML/Markdown via docling, cascade deletes
-
 **Learn:** Document parsing challenges, format considerations
 
 ---
 
 ## Module 6: Hybrid Search & Reranking
-
 **Build:** Keyword + vector search, RRF combination, local reranking
-
 **Learn:** Why vector alone isn't enough, hybrid strategies, reranking
 
 ---
 
 ## Module 7: Additional Tools
-
 **Build:** Text-to-SQL tool (query structured data), web search fallback (when docs don't have the answer)
-
-**Learn:** Multi-tool agents, routing between structured/unstructured data, graceful fallbacks, attribution for trust
+**Learn:** Multi-tool agents, routing between structured/unstructured data, graceful fallbacks
 
 ---
 
 ## Module 8: Sub-Agents
-
-**Build:** Detect full-document scenarios, spawn isolated sub-agent with its own tools, nested tool call display in UI, show reasoning from both main agent and sub-agents
-
+**Build:** Detect full-document scenarios, spawn isolated sub-agent with its own tools, nested tool call display in UI
 **Learn:** Context management, agent delegation, hierarchical agent display, when to isolate
