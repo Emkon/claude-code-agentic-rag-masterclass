@@ -109,7 +109,7 @@ export async function listDocuments(): Promise<Document[]> {
   return res.json()
 }
 
-export async function uploadDocument(file: File): Promise<Document> {
+export async function uploadDocument(file: File): Promise<{ doc: Document; dedupResult: string | null }> {
   const token = await getToken()
   const formData = new FormData()
   formData.append("file", file)
@@ -122,7 +122,9 @@ export async function uploadDocument(file: File): Promise<Document> {
     const err = await res.json().catch(() => ({ detail: "Upload failed" }))
     throw new Error(err.detail || "Upload failed")
   }
-  return res.json()
+  const doc = await res.json()
+  const dedupResult = res.headers.get("X-Dedup-Result")
+  return { doc, dedupResult }
 }
 
 export async function deleteDocument(documentId: string): Promise<void> {

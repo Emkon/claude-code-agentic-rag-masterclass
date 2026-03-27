@@ -7,8 +7,8 @@ const STATUS_LABELS: Record<Document["status"], string> = {
   parsing: "Parsing...",
   chunking: "Chunking...",
   embedding: "Embedding...",
-  complete: "completed",
-  error: "error",
+  complete: "Ready",
+  error: "Error",
 }
 
 function formatBytes(bytes: number | null): string {
@@ -19,7 +19,7 @@ function formatBytes(bytes: number | null): string {
 }
 
 export function DocumentsPage() {
-  const { documents, uploading, error, uploadFile, removeDocument } = useDocuments()
+  const { documents, uploading, error, uploadFile, removeDocument, dedupResults } = useDocuments()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
 
@@ -88,7 +88,7 @@ export function DocumentsPage() {
         {documents.length > 0 && (
           <div className="space-y-2">
             {documents.map((doc) => (
-              <DocumentRow key={doc.id} doc={doc} onDelete={() => removeDocument(doc.id)} />
+              <DocumentRow key={doc.id} doc={doc} dedupResult={dedupResults[doc.id] ?? null} onDelete={() => removeDocument(doc.id)} />
             ))}
           </div>
         )}
@@ -101,8 +101,23 @@ export function DocumentsPage() {
   )
 }
 
-function DocumentRow({ doc, onDelete }: { doc: Document; onDelete: () => void }) {
+function DocumentRow({ doc, dedupResult, onDelete }: { doc: Document; dedupResult: string | null; onDelete: () => void }) {
   const isProcessing = ["uploading", "parsing", "chunking", "embedding"].includes(doc.status)
+
+  function getBadge() {
+    if (dedupResult === "already-up-to-date") {
+      return { label: "Already up to date", style: "bg-green-100 text-green-700", animate: false }
+    }
+    if (dedupResult === "updated") {
+      if (isProcessing) return { label: "Updating...", style: "bg-yellow-100 text-yellow-700", animate: true }
+      if (doc.status === "complete") return { label: "Updated", style: "bg-green-100 text-green-700", animate: false }
+    }
+    if (doc.status === "complete") return { label: STATUS_LABELS.complete, style: "bg-green-100 text-green-700", animate: false }
+    if (doc.status === "error") return { label: STATUS_LABELS.error, style: "bg-red-100 text-red-600", animate: false }
+    return { label: STATUS_LABELS[doc.status], style: "bg-gray-100 text-gray-500", animate: true }
+  }
+
+  const badge = getBadge()
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
@@ -116,14 +131,8 @@ function DocumentRow({ doc, onDelete }: { doc: Document; onDelete: () => void })
       <span className="flex-1 text-sm text-gray-800 truncate min-w-0">{doc.filename}</span>
 
       {/* Status badge */}
-      <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium
-        ${doc.status === "complete" ? "bg-green-100 text-green-700" :
-          doc.status === "error" ? "bg-red-100 text-red-600" :
-          "bg-gray-100 text-gray-500"}`}>
-        {isProcessing
-          ? <span className="animate-pulse">{STATUS_LABELS[doc.status]}</span>
-          : STATUS_LABELS[doc.status]
-        }
+      <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${badge.style}`}>
+        {badge.animate ? <span className="animate-pulse">{badge.label}</span> : badge.label}
       </span>
 
       {/* Size · chunks */}

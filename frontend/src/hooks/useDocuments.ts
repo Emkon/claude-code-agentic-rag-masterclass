@@ -7,6 +7,7 @@ export function useDocuments() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [dedupResults, setDedupResults] = useState<Record<string, string>>({})
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -47,8 +48,15 @@ export function useDocuments() {
     setUploading(true)
     setError(null)
     try {
-      const doc = await uploadDocument(file)
-      setDocuments((prev) => [doc, ...prev])
+      const { doc, dedupResult } = await uploadDocument(file)
+      // Upsert: update in place if same id already exists (re-upload case), otherwise prepend
+      setDocuments((prev) => {
+        const exists = prev.some((d) => d.id === doc.id)
+        return exists ? prev.map((d) => d.id === doc.id ? doc : d) : [doc, ...prev]
+      })
+      if (dedupResult) {
+        setDedupResults((prev) => ({ ...prev, [doc.id]: dedupResult }))
+      }
       return doc
     } catch (e: any) {
       setError(e.message || "Upload failed")
@@ -67,5 +75,5 @@ export function useDocuments() {
     }
   }, [])
 
-  return { documents, uploading, error, uploadFile, removeDocument }
+  return { documents, uploading, error, uploadFile, removeDocument, dedupResults }
 }

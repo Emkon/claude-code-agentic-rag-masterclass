@@ -27,6 +27,7 @@ class DocumentResponse(BaseModel):
     status: str
     error_msg: str | None
     chunk_count: int
+    content_hash: str | None = None
     created_at: datetime
     updated_at: datetime
 

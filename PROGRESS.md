@@ -35,11 +35,12 @@ cd backend && venv/Scripts/uvicorn app.main:app --reload --port 8001
 cd frontend && npm run dev
 ```
 
-### Module 3: Record Manager 🔄 NEXT
-- [ ] Database — add `content_hash` column to documents table
-- [ ] Backend — hash file bytes on upload, detect duplicate/changed files
-- [ ] Backend — skip re-ingestion if hash matches, re-ingest if changed
-- [ ] End-to-End — upload same file twice → no duplicate chunks; modify file → re-ingests
+### Module 3: Record Manager ✅
+- [x] Database — add `content_hash` column to documents table
+- [x] Backend — hash file bytes on upload, detect duplicate/changed files
+- [x] Backend — skip re-ingestion if hash matches, re-ingest if changed
+- [x] End-to-End — upload same file twice → no duplicate chunks; modify file → re-ingests
+- [x] UI — "Already up to date" / "Updating..." / "Updated" status badges
 
 ### Module 4: Metadata Extraction
 - [ ] LLM-extracted structured metadata, filter retrieval by metadata
