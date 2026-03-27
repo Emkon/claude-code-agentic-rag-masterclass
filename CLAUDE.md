@@ -26,9 +26,9 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 - Each task in the plan must include at least one validation test to verify it works
 - Assess complexity and single-pass feasibility - can an agent realistically complete this in one go?
 - Include a complexity indicator at the top of each plan:
-  - ✅ **Simple** - Single-pass executable, low risk
-  - ⚠️ **Medium** - May need iteration, some complexity
-  - 🔴 **Complex** - Break into sub-plans before executing
+  - **Simple** - Single-pass executable, low risk
+  - **Medium** - May need iteration, some complexity
+  - **Complex** - Break into sub-plans before executing
 
 ## Development Flow
 1. **Plan** - Create a detailed plan and save it to `.agent/plans/`

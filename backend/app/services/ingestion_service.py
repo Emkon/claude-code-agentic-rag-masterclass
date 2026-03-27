@@ -2,6 +2,7 @@ import io
 from pypdf import PdfReader
 from app.database import get_db
 from app.services.embedding_service import chunk_text, get_embeddings
+from app.services.metadata_service import extract_document_metadata
 
 
 def _broadcast_status(document_id: str, status: str, error_msg: str | None = None) -> None:
@@ -32,7 +33,18 @@ async def ingest_document(
             _broadcast_status(document_id, "error", "PDF contained no extractable text")
             return
 
-        # Stage 2: Chunk
+        # Stage 2: Extract metadata
+        _broadcast_status(document_id, "extracting")
+        try:
+            metadata = await extract_document_metadata(full_text[:3000])
+            metadata_dict = metadata.model_dump(exclude_none=True)
+            if metadata_dict:
+                db.table("documents").update({"metadata": metadata_dict}).eq("id", document_id).execute()
+        except Exception as exc:
+            print(f"[ingestion_service] metadata update failed: {exc}")
+        # Continue regardless — metadata failure must never kill ingestion
+
+        # Stage 3: Chunk
         _broadcast_status(document_id, "chunking")
         chunks = chunk_text(full_text)
 
@@ -40,11 +52,11 @@ async def ingest_document(
             _broadcast_status(document_id, "error", "No chunks produced after splitting")
             return
 
-        # Stage 3: Embed
+        # Stage 4: Embed
         _broadcast_status(document_id, "embedding")
         embeddings = await get_embeddings(chunks)
 
-        # Stage 4: Store chunks in batches
+        # Stage 5: Store chunks in batches
         chunk_rows = [
             {
                 "document_id": document_id,
@@ -60,7 +72,7 @@ async def ingest_document(
         for i in range(0, len(chunk_rows), batch_size):
             db.table("chunks").insert(chunk_rows[i : i + batch_size]).execute()
 
-        # Stage 5: Complete
+        # Stage 6: Complete
         db.table("documents").update(
             {"status": "complete", "chunk_count": len(chunks)}
         ).eq("id", document_id).execute()

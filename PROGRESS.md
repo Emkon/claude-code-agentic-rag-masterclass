@@ -42,8 +42,14 @@ cd frontend && npm run dev
 - [x] End-to-End — upload same file twice → no duplicate chunks; modify file → re-ingests
 - [x] UI — "Already up to date" / "Updating..." / "Updated" status badges
 
-### Module 4: Metadata Extraction
-- [ ] LLM-extracted structured metadata, filter retrieval by metadata
+### Module 4: Metadata Extraction ✅
+- [x] Database — `metadata` JSONB column on documents table, `match_chunks` RPC updated with optional `filter_document_ids`, `documents_status_check` constraint updated
+- [x] Backend — `metadata_service.py` with `DocumentMetadata` + `QueryFilters` Pydantic models, `extract_document_metadata()`, `extract_query_filters()`
+- [x] Backend — `ingestion_service.py` — Stage 2 "extracting" between parse and chunk
+- [x] Backend — `retrieval_service.py` — pre-filter by metadata before vector search, unfiltered fallback
+- [x] Frontend — `types/index.ts` — `extracting` status + `metadata` field
+- [x] Frontend — `DocumentsPage.tsx` — "Extracting metadata..." status + blue pill badges
+- [x] Tests — 8 unit tests, all passing (`pytest tests/test_metadata_service.py -v`)
 
 ### Module 5: Multi-Format Support
 - [ ] PDF, DOCX, HTML, Markdown via docling

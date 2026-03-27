@@ -5,6 +5,7 @@ import type { Document } from "@/types"
 const STATUS_LABELS: Record<Document["status"], string> = {
   uploading: "Uploading...",
   parsing: "Parsing...",
+  extracting: "Extracting metadata...",
   chunking: "Chunking...",
   embedding: "Embedding...",
   complete: "Ready",
@@ -102,7 +103,7 @@ export function DocumentsPage() {
 }
 
 function DocumentRow({ doc, dedupResult, onDelete }: { doc: Document; dedupResult: string | null; onDelete: () => void }) {
-  const isProcessing = ["uploading", "parsing", "chunking", "embedding"].includes(doc.status)
+  const isProcessing = ["uploading", "parsing", "extracting", "chunking", "embedding"].includes(doc.status)
 
   function getBadge() {
     if (dedupResult === "already-up-to-date") {
@@ -120,15 +121,28 @@ function DocumentRow({ doc, dedupResult, onDelete }: { doc: Document; dedupResul
   const badge = getBadge()
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
+    <div className="flex items-start gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
       {/* File icon */}
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
       </svg>
 
-      {/* Filename */}
-      <span className="flex-1 text-sm text-gray-800 truncate min-w-0">{doc.filename}</span>
+      {/* Filename + metadata pills */}
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        <span className="text-sm text-gray-800 truncate">{doc.filename}</span>
+        {doc.metadata && (
+          <div className="flex flex-wrap gap-1">
+            {(["document_type", "entity", "year", "quarter"] as const).map((key) =>
+              doc.metadata![key] != null ? (
+                <span key={key} className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                  {String(doc.metadata![key])}
+                </span>
+              ) : null
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Status badge */}
       <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${badge.style}`}>

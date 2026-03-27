@@ -154,29 +154,41 @@ This gives total control, zero cost, and full understanding of every layer.
 
 ---
 
-## Module 3: Record Manager 🔄 NEXT
+## Module 3: Record Manager ✅ COMPLETE
 
 **Goal:** Prevent duplicate chunks when the same file is uploaded more than once. Only re-ingest if the file content has actually changed.
 
-**The problem with naive ingestion:**
-Every upload blindly inserts new chunks into the `chunks` table. Upload the same PDF twice → double the chunks → retrieval returns duplicates → degraded quality.
+**Built:**
+- `content_hash` (SHA-256) column on `documents` table
+- On upload: hash file bytes, check `(user_id, filename)` for existing record
+- Three cases: same hash → skip; different hash → delete old chunks + re-ingest; no match → normal first-time ingestion
+- `X-Dedup-Result` response header signals outcome to frontend
+- UI badges: "Already up to date" / "Updating..." / "Updated"
 
-**Build:**
-- Add `content_hash` (SHA-256) column to `documents` table
-- On upload: hash the file bytes before storing
-- Look up existing document by `(user_id, filename)`:
-  - **Same hash** → return existing document, skip ingestion entirely
-  - **Different hash** → delete old chunks, update record, re-ingest
-  - **No match** → normal first-time ingestion
-- Surface status in UI: "Already up to date" vs "Re-processing..."
-
-**Learn:** Why naive ingestion duplicates, incremental updates, content-addressable storage
+**Key decisions:**
+- Hash-only lookup scoped to `(user_id, filename)` — same content, different filename treated as new document
+- Response header used instead of a new DB column — dedup result is transient display state, not persistent data
 
 ---
 
-## Module 4: Metadata Extraction
-**Build:** LLM (Groq) extracts structured metadata, filter retrieval by metadata
-**Learn:** Structured extraction, schema design, metadata-enhanced retrieval
+## Module 4: Metadata Extraction ✅ COMPLETE
+
+**Goal:** Extract structured metadata from documents at ingestion time and use it to filter retrieval at query time.
+
+**Built:**
+- `metadata` JSONB column on `documents` table
+- `match_chunks` RPC updated with optional `filter_document_ids uuid[]` parameter (backward-compatible)
+- `metadata_service.py` — `DocumentMetadata` + `QueryFilters` Pydantic models; `extract_document_metadata()` and `extract_query_filters()` using Groq with `response_format={"type": "json_object"}`
+- Ingestion pipeline gains Stage 2 "extracting" — LLM extracts `document_type`, `topic`, `entity`, `year`, `quarter`, `language`, `summary` from first 3000 chars
+- Retrieval pre-filters candidate documents by JSONB containment before vector search; falls back to unfiltered if no matches
+- UI shows "Extracting metadata..." status + blue pill badges (entity, year, quarter, type) on document rows
+- 8 unit tests covering happy path and graceful failure for both extraction functions
+
+**Key decisions:**
+- Metadata extraction wrapped in try/except — failure never kills ingestion
+- Query filter extraction uses `max_tokens=150` to keep chat latency low
+- Unfiltered fallback is critical — prevents zero results when query filters match no documents
+- `documents_status_check` constraint updated to include `"extracting"`
 
 ---
 

@@ -26,9 +26,10 @@ export interface Document {
   filename: string
   storage_path: string
   size_bytes: number | null
-  status: 'uploading' | 'parsing' | 'chunking' | 'embedding' | 'complete' | 'error'
+  status: 'uploading' | 'parsing' | 'extracting' | 'chunking' | 'embedding' | 'complete' | 'error'
   error_msg: string | null
   chunk_count: number
+  metadata?: Record<string, any>
   created_at: string
   updated_at: string
 }
