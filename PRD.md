@@ -62,6 +62,17 @@ Technically-minded people who want to build production RAG systems using AI codi
 - Backend: `http://localhost:8001` — `cd backend && venv/Scripts/uvicorn app.main:app --reload --port 8001`
 - Frontend: `http://localhost:5174` — `cd frontend && npm run dev`
 
+## Repository
+
+**GitHub:** https://github.com/Emkon/claude-code-agentic-rag-masterclass
+
+| Module | Status | Commit |
+|--------|--------|--------|
+| Module 1: App Shell + Observability | Pushed | `7c9856b` |
+| Module 2: BYO Retrieval + Memory | Pushed | `7c9856b` |
+| Module 3: Record Manager | Pushed | `f9ba135` |
+| Module 4: Metadata Extraction | Pushed | `be42f14` |
+
 ## Constraints
 
 - No LLM frameworks — raw OpenAI Python SDK pointed at Groq base URL. Pydantic for structured outputs.
