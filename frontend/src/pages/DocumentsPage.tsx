@@ -74,13 +74,13 @@ export function DocumentsPage() {
           <p className="text-sm text-gray-600 font-medium">
             {uploading ? "Uploading..." : "Drop files here or click to upload"}
           </p>
-          <p className="text-xs text-gray-400">Supported: .pdf (max 50 MB)</p>
+          <p className="text-xs text-gray-400">Supported: .pdf, .docx, .html, .md (max 50 MB)</p>
         </div>
 
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/pdf"
+          accept=".pdf,.docx,.html,.htm,.md,.markdown"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -95,7 +95,7 @@ export function DocumentsPage() {
         )}
 
         {documents.length === 0 && !uploading && (
-          <p className="text-center text-sm text-gray-400 mt-4">No documents yet. Upload a PDF to get started.</p>
+          <p className="text-center text-sm text-gray-400 mt-4">No documents yet. Upload a document to get started.</p>
         )}
       </div>
     </div>

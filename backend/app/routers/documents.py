@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import re
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
 from app.auth import get_current_user
@@ -18,14 +19,40 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
+ALLOWED_MIME_TYPES: set[str] = {
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/html",
+    "text/markdown",
+    "text/plain",            # browsers may send .md files as text/plain
+    "application/octet-stream",  # generic fallback — extension checked below
+}
+
+ALLOWED_EXTENSIONS: set[str] = {
+    ".pdf", ".docx", ".html", ".htm", ".md", ".markdown"
+}
+
 
 @router.post("")
 async def upload_document(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),
 ):
-    if file.content_type not in ("application/pdf", "application/octet-stream"):
-        raise HTTPException(status_code=415, detail="Only PDF files are accepted")
+    file_ext = Path(file.filename or "").suffix.lower()
+
+    if file.content_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=415,
+            detail="Unsupported file type. Accepted: .pdf, .docx, .html, .md",
+        )
+
+    # For generic MIME types, require a known extension
+    if file.content_type in ("application/octet-stream", "text/plain"):
+        if file_ext not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported extension '{file_ext}'. Accepted: .pdf, .docx, .html, .htm, .md, .markdown",
+            )
 
     file_bytes = await file.read()
 
@@ -66,7 +93,7 @@ async def upload_document(
         db.storage.from_("documents").upload(
             path=storage_path,
             file=file_bytes,
-            file_options={"content-type": "application/pdf", "upsert": "true"},
+            file_options={"content-type": file.content_type or "application/octet-stream", "upsert": "true"},
         )
 
         updated = (
@@ -95,7 +122,7 @@ async def upload_document(
     db.storage.from_("documents").upload(
         path=storage_path,
         file=file_bytes,
-        file_options={"content-type": "application/pdf", "upsert": "true"},
+        file_options={"content-type": file.content_type or "application/octet-stream", "upsert": "true"},
     )
 
     result = db.table("documents").insert({

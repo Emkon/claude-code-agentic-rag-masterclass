@@ -51,8 +51,12 @@ cd frontend && npm run dev
 - [x] Frontend — `DocumentsPage.tsx` — "Extracting metadata..." status + blue pill badges
 - [x] Tests — 8 unit tests, all passing (`pytest tests/test_metadata_service.py -v`)
 
-### Module 5: Multi-Format Support
-- [ ] PDF, DOCX, HTML, Markdown via docling
+### Module 5: Multi-Format Support ✅
+- [x] Backend — `parsing_service.py` with docling `DocumentConverter` (singleton + async executor pattern)
+- [x] Backend — `ingestion_service.py` Stage 1 replaced: pypdf → `parse_document(file_bytes, filename)`
+- [x] Backend — `routers/documents.py` — accepts PDF, DOCX, HTML, Markdown; generic MIME fallback uses extension check; storage content-type fixed
+- [x] Frontend — `DocumentsPage.tsx` — `accept` updated to `.pdf,.docx,.html,.htm,.md,.markdown`; help text updated
+- [x] Tests — 11 unit tests, all passing (`pytest tests/test_parsing_service.py -v`); full suite 19/19
 
 ### Module 6: Hybrid Search & Reranking
 - [ ] Keyword + vector search, RRF combination, reranking

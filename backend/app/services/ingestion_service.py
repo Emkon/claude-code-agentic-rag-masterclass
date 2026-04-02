@@ -1,8 +1,7 @@
-import io
-from pypdf import PdfReader
 from app.database import get_db
 from app.services.embedding_service import chunk_text, get_embeddings
 from app.services.metadata_service import extract_document_metadata
+from app.services.parsing_service import parse_document
 
 
 def _broadcast_status(document_id: str, status: str, error_msg: str | None = None) -> None:
@@ -24,13 +23,10 @@ async def ingest_document(
     try:
         # Stage 1: Parse
         _broadcast_status(document_id, "parsing")
-        reader = PdfReader(io.BytesIO(file_bytes))
-        full_text = "\n".join(
-            page.extract_text() or "" for page in reader.pages
-        ).strip()
+        full_text = await parse_document(file_bytes, filename)
 
         if not full_text:
-            _broadcast_status(document_id, "error", "PDF contained no extractable text")
+            _broadcast_status(document_id, "error", "Document contained no extractable text")
             return
 
         # Stage 2: Extract metadata
