@@ -72,6 +72,7 @@ Technically-minded people who want to build production RAG systems using AI codi
 | Module 2: BYO Retrieval + Memory | Pushed | `7c9856b` |
 | Module 3: Record Manager | Pushed | `f9ba135` |
 | Module 4: Metadata Extraction | Pushed | `be42f14` |
+| Module 5: Multi-Format Support | Pushed | `ffa9185` |
 
 ## Constraints
 
