@@ -77,51 +77,40 @@ async def stream_chat(
     if chunks:
         yield f"data: __sources:{len(chunks)}\n\n"
 
-    # 6. Pass 1 — stream with tools
-    stream = await client.chat.completions.create(
+    # 6. Pass 1 — non-streaming with tools
+    # stream=False avoids llama-3.1-8b-instant leaking tool call syntax into delta.content
+    response = await client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=messages,
         tools=TOOL_DEFINITIONS,
         tool_choice="auto",
-        stream=True,
+        stream=False,
     )
 
     full_response = ""
-    finish_reason = None
-    accumulated_tool_calls: dict[int, dict] = {}
-    assistant_content = ""
+    choice = response.choices[0]
+    message = choice.message
+    finish_reason = choice.finish_reason
 
-    async for chunk in stream:
-        choice = chunk.choices[0]
-        delta = choice.delta
-        finish_reason = choice.finish_reason or finish_reason
-
-        if delta.tool_calls:
-            _merge_tool_call_deltas(accumulated_tool_calls, delta.tool_calls)
-
-        token = delta.content or ""
-        if token:
-            assistant_content += token
-            full_response += token
-            yield f"data: {token}\n\n"
+    # If model generated text before/instead of tool call, stream it
+    if message.content:
+        full_response += message.content
+        yield f"data: {message.content}\n\n"
 
     # 7. If tools requested — execute and stream Pass 2
-    if finish_reason == "tool_calls" and accumulated_tool_calls:
+    if finish_reason == "tool_calls" and message.tool_calls:
         tool_calls_for_msg = [
             {
-                "id": accumulated_tool_calls[i]["id"],
+                "id": tc.id,
                 "type": "function",
-                "function": {
-                    "name": accumulated_tool_calls[i]["name"],
-                    "arguments": accumulated_tool_calls[i]["arguments"],
-                },
+                "function": {"name": tc.function.name, "arguments": tc.function.arguments},
             }
-            for i in sorted(accumulated_tool_calls)
+            for tc in message.tool_calls
         ]
 
         messages.append({
             "role": "assistant",
-            "content": assistant_content or None,
+            "content": message.content,
             "tool_calls": tool_calls_for_msg,
         })
 
