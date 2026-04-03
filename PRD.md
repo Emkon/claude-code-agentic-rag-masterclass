@@ -207,9 +207,22 @@ This gives total control, zero cost, and full understanding of every layer.
 
 ---
 
-## Module 5: Multi-Format Support
-**Build:** PDF/DOCX/HTML/Markdown via docling, cascade deletes
-**Learn:** Document parsing challenges, format considerations
+## Module 5: Multi-Format Support ✅ COMPLETE
+
+**Goal:** Replace the pypdf-only parser with a universal parser that handles PDF, DOCX, HTML, and Markdown, and add cascade deletes so removing a document cleans up its chunks and storage object.
+
+**Built:**
+- `parsing_service.py` — `DocumentConverter` singleton (docling) with async executor pattern; `parse_document(file_bytes, filename) -> str`; temp file written → converted → deleted in finally block
+- `ingestion_service.py` Stage 1 replaced: `pypdf` → `parse_document()` — single entry point for all formats
+- `routers/documents.py` — accepts `.pdf`, `.docx`, `.html`, `.htm`, `.md`, `.markdown`; generic MIME fallback uses extension check; storage content-type fixed per format
+- Frontend `DocumentsPage.tsx` — `accept` attribute updated; help text updated to list all supported formats
+- 11 unit tests covering all formats, singleton reuse, temp file cleanup, error propagation; full suite 19/19
+
+**Key decisions:**
+- docling `DocumentConverter` loaded once as a module-level singleton — model load is expensive (~seconds)
+- `asyncio.get_event_loop().run_in_executor()` wraps the blocking docling call — keeps FastAPI event loop unblocked
+- Temp file always deleted in `finally` — no leaked files even on parse failure
+- Empty parse output returns `""` — ingestion service handles gracefully (no chunks stored)
 
 ---
 
