@@ -58,8 +58,11 @@ cd frontend && npm run dev
 - [x] Frontend — `DocumentsPage.tsx` — `accept` updated to `.pdf,.docx,.html,.htm,.md,.markdown`; help text updated
 - [x] Tests — 11 unit tests, all passing (`pytest tests/test_parsing_service.py -v`); full suite 19/19
 
-### Module 6: Hybrid Search & Reranking
-- [ ] Keyword + vector search, RRF combination, reranking
+### Module 6: Hybrid Search & Reranking ✅
+- [x] Database — `keyword_search_chunks` Supabase RPC (Postgres FTS via `plainto_tsquery`/`ts_rank`) + GIN index on `chunks.content`
+- [x] Backend — `reranking_service.py` — CrossEncoder singleton (`cross-encoder/ms-marco-MiniLM-L-6-v2`) + `rerank_chunks()`
+- [x] Backend — `retrieval_service.py` — `_reciprocal_rank_fusion()`, `_keyword_search()`, updated `retrieve_context()` (vector + keyword → RRF → rerank → Top-5)
+- [x] Tests — `test_reranking_service.py` (8 tests) + `test_retrieval_service.py` (8 tests), full suite 35/35
 
 ### Module 7: Additional Tools
 - [ ] Text-to-SQL tool

@@ -210,9 +210,22 @@ This gives total control, zero cost, and full understanding of every layer.
 
 ---
 
-## Module 6: Hybrid Search & Reranking
-**Build:** Keyword + vector search, RRF combination, local reranking
-**Learn:** Why vector alone isn't enough, hybrid strategies, reranking
+## Module 6: Hybrid Search & Reranking ✅ COMPLETE
+
+**Built:**
+- `keyword_search_chunks` Supabase RPC — Postgres FTS via `plainto_tsquery`/`ts_rank` + GIN index on `chunks.content`
+- `reranking_service.py` — CrossEncoder singleton (`cross-encoder/ms-marco-MiniLM-L-6-v2`) with async executor pattern, falls back to original order on failure
+- `retrieval_service.py` replaced — vector + keyword search run in parallel → RRF fusion (`k=60`, Cormack et al. 2009) → CrossEncoder rerank → Top-5
+- `SIMILARITY_THRESHOLD` lowered 0.3 → 0.1 (reranker handles quality filtering), `CANDIDATE_POOL=20` per arm
+- Keyword search degrades gracefully — if RPC fails, vector-only path continues unaffected
+- `logging.basicConfig` added to `main.py` so retrieval debug logs surface in uvicorn terminal
+- 16 new unit tests (35/35 full suite passing)
+
+**Key decisions:**
+- `_keyword_search()` returns `[]` on any exception — never kills the request
+- `rerank_chunks()` returns original order on any exception — never kills the request
+- `chat_service.py` required zero changes — external interface unchanged
+- `asyncio.get_event_loop().run_in_executor()` used for all blocking model/DB calls
 
 ---
 
