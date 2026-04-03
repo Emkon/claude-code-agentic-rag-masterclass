@@ -73,5 +73,11 @@ cd frontend && npm run dev
 - [x] Config — `TAVILY_API_KEY` optional in `config.py` + `.env.example`; packages in `requirements.txt`
 - [x] Tests — 30 new tests across 4 files; full suite 65/65
 
-### Module 8: Sub-Agents
-- [ ] Sub-agent delegation, nested tool display, reasoning visibility
+### Module 8: Sub-Agents ✅
+- [x] Backend — `subagent_service.py` — isolated agentic loop (max 3 iterations), tools: `retrieve_document_chunks`, `query_documents_sql`, `search_web`
+- [x] Backend — `tool_service.py` — `run_subagent` added to `TOOL_DEFINITIONS`
+- [x] Backend — `chat_service.py` — special-case `run_subagent` in tool loop, streams sub-agent SSE events inline
+- [x] Frontend — `api.ts` — handles `__tool:*`, `__subagent_start`, `__subagent_tool:*`, `__subagent_end` SSE events
+- [x] Frontend — `useChat.ts` — `activeToolName`, `subagentRunning`, `subagentTools` state
+- [x] Frontend — `ChatWindow.tsx` — `ActivityIndicator` component with nested sub-agent tool display
+- [x] Tests — 8 subagent tests + 3 chat_service tests; full suite 76/76

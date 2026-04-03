@@ -74,7 +74,7 @@ Technically-minded people who want to build production RAG systems using AI codi
 | Module 4: Metadata Extraction | Pushed | `be42f14` |
 | Module 5: Multi-Format Support | Pushed | `ffa9185` |
 | Module 6: Hybrid Search & Reranking | Pushed | `b6b3b68` |
-| Module 7: Additional Tools | Pushed | TBD |
+| Module 7: Additional Tools | Pushed | `e068010` |
 
 ## Constraints
 
@@ -245,6 +245,14 @@ This gives total control, zero cost, and full understanding of every layer.
 
 ---
 
-## Module 8: Sub-Agents
+## Module 8: Sub-Agents ✅ COMPLETE
 **Build:** Detect full-document scenarios, spawn isolated sub-agent with its own tools, nested tool call display in UI
 **Learn:** Context management, agent delegation, hierarchical agent display, when to isolate
+
+**Architecture:**
+- `run_subagent` tool added to main agent's `TOOL_DEFINITIONS` — LLM decides when to delegate
+- `subagent_service.py` — isolated agentic loop (max 3 iterations), no main thread history, tools: `retrieve_document_chunks`, `query_documents_sql`, `search_web`
+- `chat_service.py` special-cases `run_subagent`: streams sub-agent SSE events inline before Pass 2
+- SSE events: `__tool:run_subagent` → `__subagent_start` → `__subagent_tool:{name}` → `__subagent_end`
+- Frontend `ActivityIndicator` component: shows "Sub-agent analyzing..." with nested `↳ tool_name` lines
+- 11 new tests (8 subagent + 3 chat_service) → 76/76 full suite

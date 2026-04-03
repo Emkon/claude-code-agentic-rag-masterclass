@@ -8,7 +8,9 @@ USER_ID = "123e4567-e89b-12d3-a456-426614174000"
 
 def test_tool_definitions_contain_expected_names():
     names = [t["function"]["name"] for t in TOOL_DEFINITIONS]
-    assert "query_documents_sql" in names and "search_web" in names
+    assert "query_documents_sql" in names
+    assert "search_web" in names
+    assert "run_subagent" in names
 
 def test_tool_definitions_have_strict_schema():
     for tool in TOOL_DEFINITIONS:

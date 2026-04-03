@@ -22,7 +22,7 @@ export function ChatPage({ activePage, onNavigate, userEmail }: Props) {
     return thread
   }, [newThread])
 
-  const { messages, streamingContent, streaming, sourceCount, sendMessage, stopStreaming } = useChat(
+  const { messages, streamingContent, streaming, sourceCount, activeToolName, subagentRunning, subagentTools, sendMessage, stopStreaming } = useChat(
     activeThreadId,
     getOrCreateThread,
     fetchThreads
@@ -54,6 +54,9 @@ export function ChatPage({ activePage, onNavigate, userEmail }: Props) {
               streamingContent={streamingContent}
               streaming={streaming}
               sourceCount={sourceCount}
+              activeToolName={activeToolName}
+              subagentRunning={subagentRunning}
+              subagentTools={subagentTools}
             />
             <MessageInput
               onSend={sendMessage}

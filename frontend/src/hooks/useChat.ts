@@ -11,6 +11,9 @@ export function useChat(
   const [streamingContent, setStreamingContent] = useState("")
   const [streaming, setStreaming] = useState(false)
   const [sourceCount, setSourceCount] = useState(0)
+  const [activeToolName, setActiveToolName] = useState<string | null>(null)
+  const [subagentRunning, setSubagentRunning] = useState(false)
+  const [subagentTools, setSubagentTools] = useState<string[]>([])
   const activeThreadRef = useRef<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -40,6 +43,9 @@ export function useChat(
       setStreaming(true)
       setStreamingContent("")
       setSourceCount(0)
+      setActiveToolName(null)
+      setSubagentRunning(false)
+      setSubagentTools([])
 
       const controller = new AbortController()
       abortRef.current = controller
@@ -52,21 +58,31 @@ export function useChat(
           async () => {
             setStreaming(false)
             setStreamingContent("")
+            setActiveToolName(null)
+            setSubagentRunning(false)
+            setSubagentTools([])
             const updated = await listMessages(tid!)
             setMessages(updated)
             onThreadsChanged?.()
           },
           (count) => setSourceCount(count),
-          controller.signal
+          controller.signal,
+          (name) => setActiveToolName(name),
+          () => { setSubagentRunning(true); setSubagentTools([]) },
+          (name) => setSubagentTools((prev) => [...prev, name]),
+          () => setSubagentRunning(false),
         )
       } catch (e: any) {
         if (e.name !== "AbortError") console.error(e)
         setStreaming(false)
         setStreamingContent("")
+        setActiveToolName(null)
+        setSubagentRunning(false)
+        setSubagentTools([])
       }
     },
     [threadId, streaming, getOrCreateThread, onThreadsChanged]
   )
 
-  return { messages, streamingContent, streaming, sourceCount, sendMessage, stopStreaming }
+  return { messages, streamingContent, streaming, sourceCount, activeToolName, subagentRunning, subagentTools, sendMessage, stopStreaming }
 }

@@ -67,7 +67,11 @@ export async function sendMessageStream(
   onChunk: (token: string) => void,
   onDone: () => void,
   onSources?: (count: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onToolCall?: (name: string) => void,
+  onSubagentStart?: () => void,
+  onSubagentTool?: (name: string) => void,
+  onSubagentEnd?: () => void,
 ): Promise<void> {
   const headers = await getAuthHeaders()
   const res = await fetch(`/api/threads/${threadId}/messages`, {
@@ -94,6 +98,22 @@ export async function sendMessageStream(
         if (payload.startsWith("__sources:")) {
           const count = parseInt(payload.split(":")[1])
           onSources?.(count)
+          continue
+        }
+        if (payload.startsWith("__tool:")) {
+          onToolCall?.(payload.slice(7))
+          continue
+        }
+        if (payload === "__subagent_start") {
+          onSubagentStart?.()
+          continue
+        }
+        if (payload.startsWith("__subagent_tool:")) {
+          onSubagentTool?.(payload.slice(16))
+          continue
+        }
+        if (payload === "__subagent_end") {
+          onSubagentEnd?.()
           continue
         }
         onChunk(payload)

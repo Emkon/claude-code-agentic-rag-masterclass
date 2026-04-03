@@ -6,6 +6,7 @@ from app.database import get_db
 from app.services.tracing import get_traced_client
 from app.services.retrieval_service import retrieve_context, build_context_block
 from app.services.tool_service import TOOL_DEFINITIONS, execute_tool_call
+from app.services import subagent_service
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,18 @@ async def stream_chat(
                 tool_args = {}
 
             yield f"data: __tool:{tool_name}\n\n"
-            tool_result = await execute_tool_call(tool_name, tool_args, user_id)
+
+            if tool_name == "run_subagent":
+                tool_result = ""
+                async for event in subagent_service.run_subagent_streaming(
+                    tool_args.get("task", ""), user_id
+                ):
+                    if event["type"] == "sse":
+                        yield event["data"]
+                    else:
+                        tool_result = event["data"]
+            else:
+                tool_result = await execute_tool_call(tool_name, tool_args, user_id)
 
             messages.append({
                 "role": "tool",

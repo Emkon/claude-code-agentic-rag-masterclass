@@ -8,6 +8,29 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
+            "name": "run_subagent",
+            "description": (
+                "Delegate complex, multi-step document analysis to a specialized sub-agent "
+                "that can perform multiple sequential retrieval and search operations. "
+                "Use for: comprehensive document summaries, cross-document analysis, "
+                "tasks requiring iterative retrieval, or deep research questions."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "Detailed task description for the sub-agent to complete",
+                    }
+                },
+                "required": ["task"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "query_documents_sql",
             "description": (
                 "Query your uploaded documents using SQL to answer questions about "
