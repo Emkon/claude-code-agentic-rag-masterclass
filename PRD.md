@@ -75,6 +75,7 @@ Technically-minded people who want to build production RAG systems using AI codi
 | Module 5: Multi-Format Support | Pushed | `ffa9185` |
 | Module 6: Hybrid Search & Reranking | Pushed | `b6b3b68` |
 | Module 7: Additional Tools | Pushed | `e068010` |
+| Module 8: Sub-Agents | Pushed | `c431d7e` |
 
 ## Constraints
 
