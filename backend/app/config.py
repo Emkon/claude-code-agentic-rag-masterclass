@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     langsmith_api_key: str
     langchain_project: str
     huggingface_api_key: str
+    tavily_api_key: str | None = None  # Optional — falls back to DuckDuckGo
 
 
 settings = Settings()

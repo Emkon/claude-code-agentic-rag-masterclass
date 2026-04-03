@@ -74,6 +74,7 @@ Technically-minded people who want to build production RAG systems using AI codi
 | Module 4: Metadata Extraction | Pushed | `be42f14` |
 | Module 5: Multi-Format Support | Pushed | `ffa9185` |
 | Module 6: Hybrid Search & Reranking | Pushed | `b6b3b68` |
+| Module 7: Additional Tools | Pushed | TBD |
 
 ## Constraints
 
@@ -230,9 +231,17 @@ This gives total control, zero cost, and full understanding of every layer.
 
 ---
 
-## Module 7: Additional Tools
+## Module 7: Additional Tools ✅ COMPLETE
 **Build:** Text-to-SQL tool (query structured data), web search fallback (when docs don't have the answer)
 **Learn:** Multi-tool agents, routing between structured/unstructured data, graceful fallbacks
+
+**Architecture:**
+- Native Groq function calling (`tools=[]`, `tool_choice="auto"`) — no LangChain
+- Two-pass agentic streaming loop: Pass 1 streams with tools, accumulates `delta.tool_calls`; on `finish_reason == "tool_calls"` executes tools and streams Pass 2
+- Tool 1 — `query_documents_sql`: LLM generates SELECT SQL against `documents` metadata table; double-validated (Python + Supabase RPC); max 50 rows
+- Tool 2 — `search_web`: Tavily primary (free tier), DuckDuckGo automatic fallback; both fail open
+- `__tool:{name}` SSE events emitted so frontend can show tool activity
+- 30 new tests (12 sql + 8 web_search + 6 tool_service + 4 chat_service) → 65/65 full suite
 
 ---
 

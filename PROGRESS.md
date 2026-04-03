@@ -64,9 +64,14 @@ cd frontend && npm run dev
 - [x] Backend — `retrieval_service.py` — `_reciprocal_rank_fusion()`, `_keyword_search()`, updated `retrieve_context()` (vector + keyword → RRF → rerank → Top-5)
 - [x] Tests — `test_reranking_service.py` (8 tests) + `test_retrieval_service.py` (8 tests), full suite 35/35
 
-### Module 7: Additional Tools
-- [ ] Text-to-SQL tool
-- [ ] Web search fallback
+### Module 7: Additional Tools ✅
+- [x] Database — `execute_documents_query` Supabase RPC (manual SQL step)
+- [x] Backend — `sql_service.py` — LLM SQL generation + Python validation + RPC execution
+- [x] Backend — `web_search_service.py` — Tavily primary, DuckDuckGo fallback
+- [x] Backend — `tool_service.py` — `TOOL_DEFINITIONS` + `execute_tool_call()` dispatcher
+- [x] Backend — `chat_service.py` — two-pass agentic streaming loop with native Groq tool calling
+- [x] Config — `TAVILY_API_KEY` optional in `config.py` + `.env.example`; packages in `requirements.txt`
+- [x] Tests — 30 new tests across 4 files; full suite 65/65
 
 ### Module 8: Sub-Agents
 - [ ] Sub-agent delegation, nested tool display, reasoning visibility
